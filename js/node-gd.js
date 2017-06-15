@@ -1,5 +1,7 @@
 var util = require('util');
 var fs = require('fs');
+var debug = require('debug')('node-gd');
+var name = 'node-gd';
 
 var bindings;
 var versionMessage = 'Node-gd: method __METHOD__ only available from libgd2 version 2.1.1. '
@@ -15,8 +17,8 @@ function openFormatFn(fmt) {
     var file = args.shift();
     var cb = args.pop();
 
-    if (typeof cb !== "function") {
-      return bindings["createFrom" + fmt].apply(this, arguments);
+    if (typeof cb !== 'function') {
+      return bindings['createFrom' + fmt].apply(this, arguments);
     }
 
     return fs.readFile(file, function (err, data) {
@@ -25,7 +27,7 @@ function openFormatFn(fmt) {
         return cb(err);
       } else {
         try {
-          img = bindings["createFrom" + fmt + "Ptr"](data);
+          img = bindings['createFrom' + fmt + 'Ptr'](data);
         } catch(e) {
           return cb(e);
         }
@@ -48,12 +50,12 @@ function saveFormatFn(format) {
     var filename = args.shift();
     var callback = args.pop();
 
-    if (typeof callback !== "function") {
+    if (typeof callback !== 'function') {
       return this[format].apply(this, arguments);
     }
 
-    data = this[format + "Ptr"].apply(this, args);
-    return fs.writeFile(filename, data, "binary", callback);
+    data = this[format + 'Ptr'].apply(this, args);
+    return fs.writeFile(filename, data, 'binary', callback);
   };
 }
 
@@ -82,13 +84,14 @@ function exportFormats() {
     formats.Webp = [1, 1];
   }
 
+  debug('setting up functions for different image fromats');
   for (format in formats) {
     valid = formats[format];
     if (!!valid[0]) {
-      bindings["open" + format] = openFormatFn(format);
+      bindings['open' + format] = openFormatFn(format);
     }
     if (!!valid[1]) {
-      bindings.Image.prototype["save" + format] = saveFormatFn(format);
+      bindings.Image.prototype['save' + format] = saveFormatFn(format);
     }
   }
 }
@@ -99,17 +102,20 @@ var libPaths = [
 ];
 
 try {
+  debug('requiring addon');
   bindings = require(libPaths.shift());
 } catch (e) {
-  console.log(e.message);
+  debug('loading addon failed: %s', e.message);
   try {
     bindings = require(libPaths.shift());
   } catch (e) {
-    console.log(e.message);
-    console.log('Unable to find addon node_gd.node in build directory.');
+    debug('loading addon failed again: %s', e.message);
+    debug('Unable to find addon node_gd.node in build directory.');
     process.exit(1);
   }
 }
+
+debug('is built on top of libgd version: ' + bindings.getGDVersion());
 
 versionMessage += bindings.getGDVersion();
 
@@ -123,7 +129,7 @@ if (bindings.getGDVersion() >= '2.1.1') {
     }
 
     var callback = args[args.length - 1];
-    if (typeof callback !== "function") {
+    if (typeof callback !== 'function') {
       return this.file.apply(this, args);
     }
     return this.fileCallback.apply(this, args);
@@ -137,7 +143,7 @@ if (bindings.getGDVersion() >= '2.1.1') {
     }
 
     var callback = args[args.length - 1];
-    if (typeof callback !== "function") {
+    if (typeof callback !== 'function') {
       return this.createFromFile.apply(this, args);
     }
 
@@ -159,3 +165,4 @@ if (bindings.getGDVersion() >= '2.1.1') {
 }
 
 module.exports = bindings;
+debug('ready to roll!');
