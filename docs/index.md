@@ -964,6 +964,11 @@ $ npm test
 ```
 The `test/output/` directory contains the resulting images of the test script. The tests use, in some cases, a GNU Freefont font, which is licensed under the GNU General Public License v3.
 
+```bash
+$ DEBUG=node-gd npm test
+```
+This will output some debug info during runtime.
+
 
 ## Related
 
